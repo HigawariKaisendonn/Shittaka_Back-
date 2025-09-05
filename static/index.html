@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>認証テスト</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 300px; padding: 8px; border: 1px solid #ddd; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { margin-top: 20px; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; }
+    </style>
+</head>
+<body>
+    <h1>認証システム テスト</h1>
+    
+    <h2>サインアップ</h2>
+    <form id="signupForm">
+        <div class="form-group">
+            <label>メールアドレス:</label>
+            <input type="email" id="signupEmail" value="" required>
+        </div>
+        <div class="form-group">
+            <label>パスワード:</label>
+            <input type="password" id="signupPassword" value="" required>
+        </div>
+        <div class="form-group">
+            <label>ユーザー名:</label>
+            <input type="text" id="signupUsername" value="" required>
+        </div>
+        <button type="submit">サインアップ</button>
+    </form>
+
+    <h2>ログイン</h2>
+    <form id="loginForm">
+        <div class="form-group">
+            <label>メールアドレス:</label>
+            <input type="email" id="loginEmail" value="" required>
+        </div>
+        <div class="form-group">
+            <label>パスワード:</label>
+            <input type="password" id="loginPassword" value="" required>
+        </div>
+        <button type="submit">ログイン</button>
+    </form>
+
+    <div id="result" class="result" style="display: none;"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8088/api/auth';
+
+        function showResult(message, isError = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.style.backgroundColor = isError ? '#f8d7da' : '#d4edda';
+            resultDiv.style.color = isError ? '#721c24' : '#155724';
+            resultDiv.innerHTML = message;
+        }
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                email: document.getElementById('signupEmail').value,
+                password: document.getElementById('signupPassword').value,
+                username: document.getElementById('signupUsername').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult(`サインアップ成功！<br>ユーザーID: ${result.user.id}<br>メール確認が必要です。`);
+                } else {
+                    showResult(`エラー: ${result.message}`, true);
+                }
+            } catch (error) {
+                showResult(`通信エラー: ${error.message}`, true);
+            }
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                email: document.getElementById('loginEmail').value,
+                password: document.getElementById('loginPassword').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult(`ログイン成功！<br>トークン: ${result.token.substring(0, 20)}...<br>ユーザー: ${result.user.email}`);
+                } else {
+                    showResult(`ログインエラー: ${result.message}`, true);
+                }
+            } catch (error) {
+                showResult(`通信エラー: ${error.message}`, true);
+            }
+        });
+    </script>
+</body>
+</html>

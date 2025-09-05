@@ -59,6 +59,10 @@ func main() {
 		w.Write([]byte(`{"status": "ok"}`))
 	}))
 
+	// 静的ファイル配信
+	fs := http.FileServer(http.Dir("./static/"))
+	mux.Handle("/", http.StripPrefix("/", fs))
+
 	// ポート設定
 	port := os.Getenv("PORT")
 	if port == "" {

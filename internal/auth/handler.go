@@ -1,15 +1,17 @@
 package auth
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/supabase-community/gotrue-go"
-	"github.com/supabase-community/gotrue-go/types"
 )
 
 type AuthHandler struct {
@@ -40,31 +42,79 @@ func (h *AuthHandler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Supabaseでユーザー作成
-	signupReq := types.SignupRequest{
-		Email:    req.Email,
-		Password: req.Password,
-		Data: map[string]interface{}{
+	// Supabase REST APIを直接呼び出し
+	signupData := map[string]interface{}{
+		"email":    req.Email,
+		"password": req.Password,
+		"data": map[string]interface{}{
 			"username": req.Username,
 		},
 	}
-	user, err := h.client.Signup(signupReq)
+
+	jsonData, err := json.Marshal(signupData)
 	if err != nil {
-		log.Printf("Signup error: %v", err)
-		h.sendError(w, "Failed to create user", http.StatusInternalServerError)
+		h.sendError(w, "Failed to marshal signup data", http.StatusInternalServerError)
 		return
 	}
 
-	// レスポンス作成
+	// Supabase Auth APIのURL
+	authURL := os.Getenv("SUPABASE_URL") + "/auth/v1/signup"
+	httpReq, err := http.NewRequest("POST", authURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		h.sendError(w, "Failed to create request", http.StatusInternalServerError)
+		return
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("apikey", os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
+	httpReq.Header.Set("Authorization", "Bearer "+os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
+
+	client := &http.Client{}
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		log.Printf("HTTP request error: %v", err)
+		h.sendError(w, fmt.Sprintf("Failed to create user: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		h.sendError(w, "Failed to read response", http.StatusInternalServerError)
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		log.Printf("Supabase signup failed with status %d: %s", resp.StatusCode, string(body))
+		h.sendError(w, fmt.Sprintf("Failed to create user: %s", string(body)), http.StatusInternalServerError)
+		return
+	}
+
+	// Supabaseからのレスポンスをパース
+	log.Printf("Supabase response body: %s", string(body))
+	var supabaseResp map[string]interface{}
+	if err := json.Unmarshal(body, &supabaseResp); err != nil {
+		log.Printf("Failed to parse Supabase response: %v", err)
+		h.sendError(w, "Failed to parse response", http.StatusInternalServerError)
+		return
+	}
+	log.Printf("Parsed response: %+v", supabaseResp)
+
+	// レスポンス作成 - メール確認が必要な場合はtokenは空になる
 	response := AuthResponse{
-		Token:        user.AccessToken,
-		RefreshToken: user.RefreshToken,
+		Token:        getString(supabaseResp, "access_token"),
+		RefreshToken: getString(supabaseResp, "refresh_token"),
 		User: User{
-			ID:       user.User.ID.String(),
-			Email:    user.User.Email,
+			ID:       getString(supabaseResp, "id"),
+			Email:    getString(supabaseResp, "email"),
 			Username: req.Username,
 		},
 		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+	}
+
+	// メール確認が送信された場合の情報も返す
+	if confirmationSent := getString(supabaseResp, "confirmation_sent_at"); confirmationSent != "" {
+		log.Printf("Confirmation email sent at: %s", confirmationSent)
 	}
 
 	h.sendJSON(w, response, http.StatusCreated)
@@ -89,21 +139,68 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Supabaseでログイン
-	user, err := h.client.SignInWithEmailPassword(req.Email, req.Password)
+	// Supabase REST APIを直接呼び出し（ログイン）
+	loginData := map[string]interface{}{
+		"email":    req.Email,
+		"password": req.Password,
+	}
+
+	jsonData, err := json.Marshal(loginData)
 	if err != nil {
-		log.Printf("Login error: %v", err)
-		h.sendError(w, "Invalid credentials", http.StatusUnauthorized)
+		h.sendError(w, "Failed to marshal login data", http.StatusInternalServerError)
+		return
+	}
+
+	// Supabase Auth APIのURL（token エンドポイント）
+	authURL := os.Getenv("SUPABASE_URL") + "/auth/v1/token?grant_type=password"
+	httpReq, err := http.NewRequest("POST", authURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		h.sendError(w, "Failed to create request", http.StatusInternalServerError)
+		return
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("apikey", os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
+
+	client := &http.Client{}
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		log.Printf("HTTP login request error: %v", err)
+		h.sendError(w, fmt.Sprintf("Failed to login: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		h.sendError(w, "Failed to read response", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Login response status: %d", resp.StatusCode)
+	log.Printf("Login response body: %s", string(body))
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Supabase login failed with status %d: %s", resp.StatusCode, string(body))
+		h.sendError(w, "Invalid credentials or email not confirmed", http.StatusUnauthorized)
+		return
+	}
+
+	// Supabaseからのレスポンスをパース
+	var supabaseResp map[string]interface{}
+	if err := json.Unmarshal(body, &supabaseResp); err != nil {
+		log.Printf("Failed to parse login response: %v", err)
+		h.sendError(w, "Failed to parse response", http.StatusInternalServerError)
 		return
 	}
 
 	// レスポンス作成
 	response := AuthResponse{
-		Token:        user.AccessToken,
-		RefreshToken: user.RefreshToken,
+		Token:        getString(supabaseResp, "access_token"),
+		RefreshToken: getString(supabaseResp, "refresh_token"),
 		User: User{
-			ID:    user.User.ID.String(),
-			Email: user.User.Email,
+			ID:    getString(getMap(supabaseResp, "user"), "id"),
+			Email: getString(getMap(supabaseResp, "user"), "email"),
 		},
 		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
 	}
@@ -196,4 +293,24 @@ func (h *AuthHandler) sendError(w http.ResponseWriter, message string, statusCod
 		Message: message,
 	}
 	h.sendJSON(w, response, statusCode)
+}
+
+// getString は map から文字列を安全に取得
+func getString(m map[string]interface{}, key string) string {
+	if val, ok := m[key]; ok {
+		if str, ok := val.(string); ok {
+			return str
+		}
+	}
+	return ""
+}
+
+// getMap は map から map を安全に取得
+func getMap(m map[string]interface{}, key string) map[string]interface{} {
+	if val, ok := m[key]; ok {
+		if mapVal, ok := val.(map[string]interface{}); ok {
+			return mapVal
+		}
+	}
+	return make(map[string]interface{})
 }

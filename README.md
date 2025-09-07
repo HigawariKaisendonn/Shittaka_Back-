@@ -120,18 +120,76 @@ curl -X POST http://localhost:8088/api/auth/login \
 
 ### プロジェクト構造
 
+
 ```
-├── cmd/
-│   └── server/
-│       └── main.go          # メインサーバーファイル
-├── internal/
-│   └── auth/
-│       ├── client.go        # Supabaseクライアント
-│       ├── handler.go       # HTTPハンドラー
-│       └── types.go         # 型定義
-├── go.mod
-├── go.sum
-└── README.md
+│  .env
+│  .gitignore
+│  env.example
+│  go.mod
+│  go.sum
+│  README.md
+│  server.exe
+│
+├─.claude
+│      settings.local.json
+│
+├─.vscode
+├─cmd
+│  └─server
+│          main.go
+│
+├─internal
+│  ├─application
+│  │  └─auth
+│  │      ├─dto
+│  │      │      auth_dto.go
+│  │      │
+│  │      └─usecases
+│  │              auth_usecase.go
+│  │
+│  ├─domain
+│  │  ├─auth
+│  │  │  ├─entities
+│  │  │  │      user.go
+│  │  │  │
+│  │  │  ├─repositories
+│  │  │  │      user_repository.go
+│  │  │  │
+│  │  │  └─services
+│  │  │          auth_service.go
+│  │  │
+│  │  └─shared
+│  │          errors.go
+│  │
+│  ├─infrastructure
+│  │  ├─auth
+│  │  │  └─supabase
+│  │  │          user_repository_impl.go
+│  │  │
+│  │  ├─config
+│  │  │      config.go
+│  │  │
+│  │  ├─database
+│  │  └─di
+│  │          container.go
+│  │
+│  └─presentation
+│      ├─dto
+│      │      auth_dto.go
+│      │
+│      └─http
+│          ├─handlers
+│          │      auth_handler.go
+│          │
+│          ├─middleware
+│          │      cors.go
+│          │
+│          └─router
+│                  router.go
+│
+└─static
+        index.html
+
 ```
 
 ### 依存関係

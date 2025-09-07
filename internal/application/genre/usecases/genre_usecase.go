@@ -59,11 +59,11 @@ func (u *GenreUsecase) CreateGenre(ctx context.Context, req dto.CreateGenreReque
 // validateCreateGenreRequest はジャンル作成リクエストをバリデーション
 func (u *GenreUsecase) validateCreateGenreRequest(req dto.CreateGenreRequest) error {
 	if strings.TrimSpace(req.Name) == "" {
-		return shared.NewValidationError("ジャンル名は必須です")
+		return shared.NewValidationError("name", "ジャンル名は必須です")
 	}
 
 	if len(req.Name) > 50 {
-		return shared.NewValidationError("ジャンル名は50文字以内で入力してください")
+		return shared.NewValidationError("name", "ジャンル名は50文字以内で入力してください")
 	}
 
 	return nil

@@ -1,5 +1,7 @@
 package shared
 
+// errors.goはエラーを定義
+
 import "fmt"
 
 // ValidationError はバリデーションエラーを表す

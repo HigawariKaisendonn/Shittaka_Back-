@@ -1,5 +1,7 @@
 package dto
 
+// auth_dto.goは認証関連のDTOを定義
+
 // SignUpRequest はサインアップリクエストのDTO
 type SignUpRequest struct {
 	Email    string `json:"email"`
@@ -15,10 +17,10 @@ type SignInRequest struct {
 
 // AuthResponse は認証レスポンスのDTO
 type AuthResponse struct {
-	Token        string `json:"token"`
-	RefreshToken string `json:"refresh_token"`
+	Token        string  `json:"token"`
+	RefreshToken string  `json:"refresh_token"`
 	User         UserDTO `json:"user"`
-	ExpiresAt    int64  `json:"expires_at"`
+	ExpiresAt    int64   `json:"expires_at"`
 }
 
 // UserDTO はユーザー情報のDTO

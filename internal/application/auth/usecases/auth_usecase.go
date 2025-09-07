@@ -1,11 +1,13 @@
 package usecases
 
+// auth_usecase.goは認証に関するユースケースを定義
+
 import (
-	"context"
 	"Shittaka_back/internal/application/auth/dto"
-	"Shittaka_back/internal/domain/auth/services"
 	"Shittaka_back/internal/domain/auth/entities"
 	"Shittaka_back/internal/domain/auth/repositories"
+	"Shittaka_back/internal/domain/auth/services"
+	"context"
 )
 
 // AuthUsecase は認証に関するユースケース
@@ -26,7 +28,7 @@ func (u *AuthUsecase) SignUp(ctx context.Context, req dto.SignUpRequest) (*dto.A
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return u.toAuthResponse(authResult), nil
 }
 
@@ -36,7 +38,7 @@ func (u *AuthUsecase) SignIn(ctx context.Context, req dto.SignInRequest) (*dto.A
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return u.toAuthResponse(authResult), nil
 }
 

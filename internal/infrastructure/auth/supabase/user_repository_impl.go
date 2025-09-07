@@ -1,5 +1,7 @@
 package supabase
 
+// user_repository_impl.goはSupabaseを使用したUserRepositoryの実装
+
 import (
 	"bytes"
 	"context"

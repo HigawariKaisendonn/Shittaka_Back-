@@ -1,5 +1,12 @@
 package middleware
 
+// cors.goはCORS対応のミドルウェアを定義
+
+// CORSとは、Cross-Origin Resource Sharingの略
+// 異なるオリジン間でのリソース共有を許可するための仕組み
+
+// オリジンとは、WebページのURLのこと
+
 import "net/http"
 
 // CORS はCORS対応のミドルウェアを返す

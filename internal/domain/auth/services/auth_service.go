@@ -1,11 +1,14 @@
 package services
 
+// auth_service.goは認証に関するドメインサービスを定義
+// ドメインサービスとは、ドメイン層のロジックを実装する
+
 import (
+	"Shittaka_back/internal/domain/auth/repositories"
+	"Shittaka_back/internal/domain/shared"
 	"context"
 	"fmt"
 	"strings"
-	"Shittaka_back/internal/domain/auth/repositories"
-	"Shittaka_back/internal/domain/shared"
 )
 
 // AuthService は認証に関するドメインサービス
@@ -26,29 +29,29 @@ func (s *AuthService) SignUp(ctx context.Context, email, password, username stri
 	if err := s.validateSignUpInput(email, password, username); err != nil {
 		return nil, err
 	}
-	
+
 	// 既存ユーザーチェック
 	existingUser, _ := s.userRepo.FindByEmail(ctx, email)
 	if existingUser != nil {
 		return nil, shared.NewDomainError("USER_EXISTS", "user with this email already exists")
 	}
-	
+
 	// ユーザー作成
 	metadata := map[string]interface{}{
 		"username": username,
 	}
-	
+
 	_, err := s.userRepo.Create(ctx, email, password, metadata)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
-	
+
 	// 認証（トークン取得）
 	authResult, err := s.userRepo.Authenticate(ctx, email, password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to authenticate after signup: %w", err)
 	}
-	
+
 	return authResult, nil
 }
 
@@ -58,13 +61,13 @@ func (s *AuthService) SignIn(ctx context.Context, email, password string) (*repo
 	if err := s.validateSignInInput(email, password); err != nil {
 		return nil, err
 	}
-	
+
 	// 認証
 	authResult, err := s.userRepo.Authenticate(ctx, email, password)
 	if err != nil {
 		return nil, shared.NewDomainError("AUTH_FAILED", "invalid credentials or email not confirmed")
 	}
-	
+
 	return authResult, nil
 }
 
@@ -73,12 +76,12 @@ func (s *AuthService) SignOut(ctx context.Context, token string) error {
 	if token == "" {
 		return shared.NewValidationError("token", "token is required")
 	}
-	
+
 	// "Bearer " プレフィックスを除去
 	if len(token) > 7 && token[:7] == "Bearer " {
 		token = token[7:]
 	}
-	
+
 	return s.userRepo.Logout(ctx, token)
 }
 
@@ -99,7 +102,7 @@ func (s *AuthService) validateSignUpInput(email, password, username string) erro
 	if !strings.Contains(email, "@") {
 		return shared.NewValidationError("email", "invalid email format")
 	}
-	
+
 	return nil
 }
 
@@ -111,6 +114,6 @@ func (s *AuthService) validateSignInInput(email, password string) error {
 	if password == "" {
 		return shared.NewValidationError("password", "password is required")
 	}
-	
+
 	return nil
 }

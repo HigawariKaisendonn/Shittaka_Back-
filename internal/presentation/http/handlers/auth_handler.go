@@ -1,15 +1,18 @@
 package handlers
 
+// auth_handler.goは認証に関するHTTPハンドラーを定義
+// HTTPハンドラーとは、HTTPリクエストを受け取り、適切なユースケースに処理を委譲する
+
 import (
 	"encoding/json"
 	"log"
 	"net/http"
 	"time"
-	
+
 	"Shittaka_back/internal/application/auth/dto"
 	"Shittaka_back/internal/application/auth/usecases"
-	presentationDTO "Shittaka_back/internal/presentation/dto"
 	"Shittaka_back/internal/domain/shared"
+	presentationDTO "Shittaka_back/internal/presentation/dto"
 )
 
 // AuthHandler は認証関連のHTTPハンドラー
@@ -30,26 +33,26 @@ func (h *AuthHandler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		h.sendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	
+
 	var req presentationDTO.AuthRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.sendError(w, "Invalid JSON format", http.StatusBadRequest)
 		return
 	}
-	
+
 	// DTOの変換
 	usecaseReq := dto.SignUpRequest{
 		Email:    req.Email,
 		Password: req.Password,
 		Username: req.Username,
 	}
-	
+
 	authResp, err := h.authUsecase.SignUp(r.Context(), usecaseReq)
 	if err != nil {
 		h.handleUsecaseError(w, err)
 		return
 	}
-	
+
 	// レスポンスDTOに変換
 	response := presentationDTO.AuthResponse{
 		Token:        authResp.Token,
@@ -61,7 +64,7 @@ func (h *AuthHandler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		},
 		ExpiresAt: authResp.ExpiresAt,
 	}
-	
+
 	h.sendJSON(w, response, http.StatusCreated)
 }
 
@@ -71,25 +74,25 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		h.sendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	
+
 	var req presentationDTO.AuthRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.sendError(w, "Invalid JSON format", http.StatusBadRequest)
 		return
 	}
-	
+
 	// DTOの変換
 	usecaseReq := dto.SignInRequest{
 		Email:    req.Email,
 		Password: req.Password,
 	}
-	
+
 	authResp, err := h.authUsecase.SignIn(r.Context(), usecaseReq)
 	if err != nil {
 		h.handleUsecaseError(w, err)
 		return
 	}
-	
+
 	// レスポンスDTOに変換
 	response := presentationDTO.AuthResponse{
 		Token:        authResp.Token,
@@ -101,7 +104,7 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		},
 		ExpiresAt: authResp.ExpiresAt,
 	}
-	
+
 	h.sendJSON(w, response, http.StatusOK)
 }
 
@@ -111,19 +114,19 @@ func (h *AuthHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		h.sendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	
+
 	token := r.Header.Get("Authorization")
 	if token == "" {
 		h.sendError(w, "Authorization token required", http.StatusBadRequest)
 		return
 	}
-	
+
 	err := h.authUsecase.SignOut(r.Context(), token)
 	if err != nil {
 		h.handleUsecaseError(w, err)
 		return
 	}
-	
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
 }
@@ -134,13 +137,13 @@ func (h *AuthHandler) TestConnectionHandler(w http.ResponseWriter, r *http.Reque
 		h.sendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	
+
 	response := map[string]interface{}{
 		"status":    "connected",
 		"message":   "Supabase connection is configured",
 		"timestamp": time.Now().Unix(),
 	}
-	
+
 	h.sendJSON(w, response, http.StatusOK)
 }
 

@@ -1,5 +1,7 @@
 package dto
 
+// auth_dto.goは認証に関するHTTP DTOを定義
+
 // HTTPリクエスト/レスポンス用のDTO
 
 // AuthRequest は認証リクエストのHTTP DTO

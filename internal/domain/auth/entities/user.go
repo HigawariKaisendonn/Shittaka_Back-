@@ -1,8 +1,10 @@
 package entities
 
+// user.goはユーザーのドメインエンティティを定義
+
 import (
-	"time"
 	"Shittaka_back/internal/domain/shared"
+	"time"
 )
 
 // User はユーザーのドメインエンティティ

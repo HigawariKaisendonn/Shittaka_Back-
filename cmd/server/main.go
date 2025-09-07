@@ -1,5 +1,7 @@
 package main
 
+// main.goはサーバー起動のメインファイル
+
 import (
 	"log"
 	"net/http"

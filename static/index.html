@@ -69,25 +69,29 @@
             };
 
             try {
+                console.log('サインアップリクエスト送信:', data);
                 const response = await fetch(`${API_BASE}/signup`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
 
+                console.log('レスポンス受信:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
                 const result = await response.json();
+                console.log('レスポンス内容:', result);
                 
                 if (response.ok) {
-                    showResult(`サインアップ成功！<br>ユーザーID: ${result.user.id}<br><br>📧 メール確認が必要です<br>登録したメールアドレスに確認メールが送信されました。<br>メール内のリンクをクリックしてアカウントを有効化してください。`);
+                    showResult(`サインアップ成功！<br>ユーザーID: ${result.user.id}<br>メール確認が必要です。`);
                 } else {
-                    // メール確認エラーの特別な処理
-                    if (result.message && result.message.includes('email confirmation required')) {
-                        showResult(`📧 メール確認が必要です<br>登録したメールアドレスに確認メールが送信されました。<br>メール内のリンクをクリックしてアカウントを有効化してください。`, true);
-                    } else {
-                        showResult(`エラー: ${result.message}`, true);
-                    }
+                    showResult(`エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
                 }
             } catch (error) {
+                console.error('通信エラー:', error);
                 showResult(`通信エラー: ${error.message}`, true);
             }
         });
@@ -101,20 +105,29 @@
             };
 
             try {
+                console.log('ログインリクエスト送信:', data);
                 const response = await fetch(`${API_BASE}/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
 
+                console.log('レスポンス受信:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
                 const result = await response.json();
+                console.log('レスポンス内容:', result);
                 
                 if (response.ok) {
                     showResult(`ログイン成功！<br>トークン: ${result.token.substring(0, 20)}...<br>ユーザー: ${result.user.email}`);
                 } else {
-                    showResult(`ログインエラー: ${result.message}`, true);
+                    showResult(`ログインエラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
                 }
             } catch (error) {
+                console.error('通信エラー:', error);
                 showResult(`通信エラー: ${error.message}`, true);
             }
         });

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -25,8 +26,8 @@ func NewGenreRepository() repositories.GenreRepository {
 	return &GenreRepositoryImpl{}
 }
 
-// Create は新しいジャンルを作成
-func (r *GenreRepositoryImpl) Create(ctx context.Context, genre *entities.Genre) (*entities.Genre, error) {
+// Create は新しいジャンルを作成（RLS適用のためユーザートークンを使用）
+func (r *GenreRepositoryImpl) Create(ctx context.Context, genre *entities.Genre, userToken string) (*entities.Genre, error) {
 	genreData := map[string]interface{}{
 		"name": genre.Name,
 	}
@@ -36,15 +37,15 @@ func (r *GenreRepositoryImpl) Create(ctx context.Context, genre *entities.Genre)
 		return nil, fmt.Errorf("failed to marshal genre data: %w", err)
 	}
 
-	url := os.Getenv("SUPABASE_URL") + "/rest/v1/ganres"
+	url := os.Getenv("SUPABASE_URL") + "/rest/v1/genres"
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("apikey", os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
-	req.Header.Set("Authorization", "Bearer "+os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
+	req.Header.Set("apikey", os.Getenv("SUPABASE_ANON_KEY"))
+	req.Header.Set("Authorization", "Bearer "+userToken)
 	req.Header.Set("Prefer", "return=representation")
 
 	client := &http.Client{}
@@ -81,14 +82,14 @@ func (r *GenreRepositoryImpl) Create(ctx context.Context, genre *entities.Genre)
 
 // FindByID はIDでジャンルを検索
 func (r *GenreRepositoryImpl) FindByID(ctx context.Context, id int64) (*entities.Genre, error) {
-	url := fmt.Sprintf("%s/rest/v1/ganres?id=eq.%d", os.Getenv("SUPABASE_URL"), id)
+	url := fmt.Sprintf("%s/rest/v1/genres?id=eq.%d", os.Getenv("SUPABASE_URL"), id)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("apikey", os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
-	req.Header.Set("Authorization", "Bearer "+os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
+	req.Header.Set("apikey", os.Getenv("SUPABASE_ANON_KEY"))
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("SUPABASE_ANON_KEY"))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -124,14 +125,14 @@ func (r *GenreRepositoryImpl) FindByID(ctx context.Context, id int64) (*entities
 
 // FindAll は全てのジャンルを取得
 func (r *GenreRepositoryImpl) FindAll(ctx context.Context) ([]*entities.Genre, error) {
-	url := os.Getenv("SUPABASE_URL") + "/rest/v1/ganres"
+	url := os.Getenv("SUPABASE_URL") + "/rest/v1/genres"
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("apikey", os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
-	req.Header.Set("Authorization", "Bearer "+os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
+	req.Header.Set("apikey", os.Getenv("SUPABASE_ANON_KEY"))
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("SUPABASE_ANON_KEY"))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -165,16 +166,18 @@ func (r *GenreRepositoryImpl) FindAll(ctx context.Context) ([]*entities.Genre, e
 	return genres, nil
 }
 
-// FindByName は名前でジャンルを検索
-func (r *GenreRepositoryImpl) FindByName(ctx context.Context, name string) (*entities.Genre, error) {
-	url := fmt.Sprintf("%s/rest/v1/ganres?name=eq.%s", os.Getenv("SUPABASE_URL"), name)
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+// FindByName は名前でジャンルを検索（RLS適用のためユーザートークンを使用）
+func (r *GenreRepositoryImpl) FindByName(ctx context.Context, name string, userToken string) (*entities.Genre, error) {
+	// URLエンコーディングを適用
+	encodedName := url.QueryEscape(name)
+	apiURL := fmt.Sprintf("%s/rest/v1/genres?name=eq.%s", os.Getenv("SUPABASE_URL"), encodedName)
+	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("apikey", os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
-	req.Header.Set("Authorization", "Bearer "+os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
+	req.Header.Set("apikey", os.Getenv("SUPABASE_ANON_KEY"))
+	req.Header.Set("Authorization", "Bearer "+userToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

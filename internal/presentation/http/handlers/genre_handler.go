@@ -32,6 +32,19 @@ func (h *GenreHandler) CreateGenreHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// 認証トークンの取得
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		h.sendError(w, "認証が必要です", http.StatusUnauthorized)
+		return
+	}
+	
+	// "Bearer " プレフィックスを除去
+	userToken := authHeader
+	if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+		userToken = authHeader[7:]
+	}
+
 	var req presentationDTO.CreateGenreRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.sendError(w, "Invalid JSON format", http.StatusBadRequest)
@@ -43,7 +56,7 @@ func (h *GenreHandler) CreateGenreHandler(w http.ResponseWriter, r *http.Request
 		Name: req.Name,
 	}
 
-	genreResp, err := h.genreUsecase.CreateGenre(r.Context(), usecaseReq)
+	genreResp, err := h.genreUsecase.CreateGenre(r.Context(), usecaseReq, userToken)
 	if err != nil {
 		h.handleUsecaseError(w, err)
 		return

@@ -24,15 +24,15 @@ func NewGenreUsecase(genreRepo repositories.GenreRepository) *GenreUsecase {
 	}
 }
 
-// CreateGenre は新しいジャンルを作成する
-func (u *GenreUsecase) CreateGenre(ctx context.Context, req dto.CreateGenreRequest) (*dto.GenreResponse, error) {
+// CreateGenre は新しいジャンルを作成する（認証が必要）
+func (u *GenreUsecase) CreateGenre(ctx context.Context, req dto.CreateGenreRequest, userToken string) (*dto.GenreResponse, error) {
 	// バリデーション
 	if err := u.validateCreateGenreRequest(req); err != nil {
 		return nil, err
 	}
 
 	// 同名のジャンルが既に存在するかチェック
-	existingGenre, err := u.genreRepo.FindByName(ctx, req.Name)
+	existingGenre, err := u.genreRepo.FindByName(ctx, req.Name, userToken)
 	if err != nil && !isNotFoundError(err) {
 		return nil, err
 	}
@@ -43,8 +43,8 @@ func (u *GenreUsecase) CreateGenre(ctx context.Context, req dto.CreateGenreReque
 	// ジャンルエンティティを作成
 	genre := entities.NewGenre(req.Name)
 
-	// リポジトリに保存
-	createdGenre, err := u.genreRepo.Create(ctx, genre)
+	// リポジトリに保存（ユーザートークンを渡してRLS適用）
+	createdGenre, err := u.genreRepo.Create(ctx, genre, userToken)
 	if err != nil {
 		return nil, err
 	}

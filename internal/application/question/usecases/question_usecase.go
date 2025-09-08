@@ -76,10 +76,16 @@ func (u *QuestionUsecase) UpdateQuestion(ctx context.Context, id int64, req dto.
 		return shared.NewDomainError("FORBIDDEN", "この問題を更新する権限がありません")
 	}
 
-	// 問題を更新
-	existingQuestion.Title = req.Title
-	existingQuestion.Body = req.Body
-	existingQuestion.Explanation = req.Explanation
+	// 問題を更新（空でない場合のみ更新）
+	if strings.TrimSpace(req.Title) != "" {
+		existingQuestion.Title = req.Title
+	}
+	if req.Body != "" {
+		existingQuestion.Body = req.Body
+	}
+	if req.Explanation != "" {
+		existingQuestion.Explanation = req.Explanation
+	}
 
 	// リポジトリで更新
 	return u.questionRepo.Update(ctx, existingQuestion, userToken)
@@ -197,11 +203,13 @@ func (u *QuestionUsecase) validateCreateQuestionRequest(req dto.CreateQuestionRe
 
 // validateUpdateQuestionRequest は問題更新リクエストをバリデーション
 func (u *QuestionUsecase) validateUpdateQuestionRequest(req dto.UpdateQuestionRequest) error {
-	if strings.TrimSpace(req.Title) == "" {
-		return shared.NewValidationError("title", "問題タイトルは必須です")
+	// 全てのフィールドが空の場合はエラー
+	if strings.TrimSpace(req.Title) == "" && req.Body == "" && req.Explanation == "" {
+		return shared.NewValidationError("fields", "更新する内容を入力してください")
 	}
 
-	if len(req.Title) > 200 {
+	// タイトルが指定されている場合の文字数チェック
+	if strings.TrimSpace(req.Title) != "" && len(req.Title) > 200 {
 		return shared.NewValidationError("title", "問題タイトルは200文字以内で入力してください")
 	}
 

@@ -10,7 +10,7 @@ import (
 )
 
 // SetupRoutes はルーティングを設定
-func SetupRoutes(authHandler *handlers.AuthHandler, genreHandler *handlers.GenreHandler) *http.ServeMux {
+func SetupRoutes(authHandler *handlers.AuthHandler, genreHandler *handlers.GenreHandler, questionHandler *handlers.QuestionHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// 認証関連のエンドポイント
@@ -21,6 +21,31 @@ func SetupRoutes(authHandler *handlers.AuthHandler, genreHandler *handlers.Genre
 
 	// ジャンル関連のエンドポイント
 	mux.HandleFunc("/api/genres", middleware.CORS(genreHandler.CreateGenreHandler))
+
+	// 問題関連のエンドポイント
+	mux.HandleFunc("/api/questions", middleware.CORS(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			questionHandler.CreateQuestionHandler(w, r)
+		case http.MethodGet:
+			questionHandler.GetQuestionsHandler(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
+	mux.HandleFunc("/api/questions/", middleware.CORS(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			questionHandler.GetQuestionHandler(w, r)
+		case http.MethodPut:
+			questionHandler.UpdateQuestionHandler(w, r)
+		case http.MethodDelete:
+			questionHandler.DeleteQuestionHandler(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
+	mux.HandleFunc("/api/my-questions", middleware.CORS(questionHandler.GetMyQuestionsHandler))
 
 	// ヘルスチェック用エンドポイント
 	mux.HandleFunc("/health", middleware.CORS(func(w http.ResponseWriter, r *http.Request) {

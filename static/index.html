@@ -55,6 +55,31 @@
         <button type="submit">ジャンル作成</button>
     </form>
 
+    <h2>問題作成</h2>
+    <form id="questionForm">
+        <div class="form-group">
+            <label>ジャンルID:</label>
+            <input type="number" id="questionGenreId" placeholder="例: 1" required>
+        </div>
+        <div class="form-group">
+            <label>問題タイトル:</label>
+            <input type="text" id="questionTitle" placeholder="例: JavaScriptの基本文法" required>
+        </div>
+        <div class="form-group">
+            <label>問題文:</label>
+            <textarea id="questionBody" placeholder="問題の詳細を入力してください" rows="4" style="width: 300px; padding: 8px; border: 1px solid #ddd; resize: vertical;"></textarea>
+        </div>
+        <div class="form-group">
+            <label>解説:</label>
+            <textarea id="questionExplanation" placeholder="解説を入力してください" rows="3" style="width: 300px; padding: 8px; border: 1px solid #ddd; resize: vertical;"></textarea>
+        </div>
+        <button type="submit">問題作成</button>
+    </form>
+
+    <h2>問題一覧</h2>
+    <button id="loadQuestionsBtn">問題一覧を取得</button>
+    <div id="questionsList" class="result" style="display: none;"></div>
+
     <div id="result" class="result" style="display: none;"></div>
 
     <script>
@@ -180,6 +205,106 @@
                     document.getElementById('genreName').value = '';
                 } else {
                     showResult(`ジャンル作成エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
+                }
+            } catch (error) {
+                console.error('通信エラー:', error);
+                showResult(`通信エラー: ${error.message}`, true);
+            }
+        });
+
+        document.getElementById('questionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!authToken) {
+                showResult('先にログインしてください', true);
+                return;
+            }
+            
+            const data = {
+                genre_id: parseInt(document.getElementById('questionGenreId').value),
+                title: document.getElementById('questionTitle').value,
+                body: document.getElementById('questionBody').value,
+                explanation: document.getElementById('questionExplanation').value
+            };
+
+            try {
+                console.log('問題作成リクエスト送信:', data);
+                const response = await fetch('http://localhost:8088/api/questions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('レスポンス受信:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
+                const result = await response.json();
+                console.log('レスポンス内容:', result);
+                
+                if (response.ok) {
+                    showResult(`問題作成成功！<br>ID: ${result.id}<br>タイトル: ${result.title}<br>作成日時: ${new Date(result.created_at).toLocaleString()}`);
+                    document.getElementById('questionForm').reset();
+                } else {
+                    showResult(`問題作成エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
+                }
+            } catch (error) {
+                console.error('通信エラー:', error);
+                showResult(`通信エラー: ${error.message}`, true);
+            }
+        });
+
+        document.getElementById('loadQuestionsBtn').addEventListener('click', async () => {
+            try {
+                console.log('問題一覧取得リクエスト送信');
+                const response = await fetch('http://localhost:8088/api/questions', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('レスポンス受信:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
+                const result = await response.json();
+                console.log('レスポンス内容:', result);
+                
+                if (response.ok) {
+                    const questionsDiv = document.getElementById('questionsList');
+                    questionsDiv.style.display = 'block';
+                    questionsDiv.style.backgroundColor = '#d4edda';
+                    questionsDiv.style.color = '#155724';
+                    
+                    if (Array.isArray(result) && result.length > 0) {
+                        let questionsHtml = '<h3>問題一覧:</h3>';
+                        result.forEach(q => {
+                            questionsHtml += `
+                                <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                                    <h4>${q.title}</h4>
+                                    <p><strong>ジャンルID:</strong> ${q.genre_id}</p>
+                                    <p><strong>投稿者:</strong> ${q.user_id}</p>
+                                    <p><strong>問題文:</strong> ${q.body || '未設定'}</p>
+                                    <p><strong>解説:</strong> ${q.explanation || '未設定'}</p>
+                                    <p><strong>閲覧数:</strong> ${q.views} | <strong>正解数:</strong> ${q.correct_count} | <strong>不正解数:</strong> ${q.incorrect_count}</p>
+                                    <p><strong>作成日時:</strong> ${new Date(q.created_at).toLocaleString()}</p>
+                                </div>
+                            `;
+                        });
+                        questionsDiv.innerHTML = questionsHtml;
+                    } else {
+                        questionsDiv.innerHTML = '<h3>問題が見つかりません</h3>';
+                    }
+                } else {
+                    showResult(`問題一覧取得エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
                 }
             } catch (error) {
                 console.error('通信エラー:', error);

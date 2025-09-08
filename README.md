@@ -44,11 +44,7 @@ PORT=8088
    - Project URL (`SUPABASE_URL`)
    - Service Role Key (`SUPABASE_SERVICE_ROLE_KEY`)
 
-### 4.server.exeの作成
 
-``` bash
-go build -o server.exe cmd/server/main.go
-```
 
 ### 5.接続テスト
 
@@ -58,18 +54,42 @@ go build -o server.exe cmd/server/main.go
 # powershell
 $env:SUPABASE_URL = ".env参照"
 $env:SUPABASE_SERVICE_ROLE_KEY = ".env参照"
+$env:SUPABASE_ANON_KEY=".env参照"
 $env:PORT = "8088"
 
 # サーバーを起動
 ./server.exe
 ```
 
+```bash
+# bash
+export SUPABASE_URL=".env参照"
+export SUPABASE_SERVICE_ROLE_KEY=".env参照"
+export SUPABASE_ANON_KEY=".env参照"
+export  PORT="8088"
+```
+```
+# 実行
+go run cmd/server/main.go
+```
+
+
 ```powershell
+# powershell
 # ヘルスチェック
 Invoke-WebRequest -Uri "http://localhost:8088/health" -Method GET
 
 # Supabase接続テスト
 Invoke-WebRequest -Uri "http://localhost:8088/api/auth/test" -Method GET
+```
+
+```bash
+# bash
+# ヘルスチェック
+curl -X GET "http://localhost:8088/health"
+
+# Supabase接続テスト
+curl -X GET "http://localhost:8088/api/auth/test"
 ```
 
 

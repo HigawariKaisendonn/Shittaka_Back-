@@ -32,9 +32,15 @@ cp env.example .env
 # Supabase設定
 SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_JWT_KEY=your-anon-jwt-here
 
 # サーバー設定
 PORT=8088
+APP_ENV=developmenL
+
+# 開発環境用の設定
+GIN_MODE=debug
 ```
 
 ### 3. Supabaseプロジェクトの設定

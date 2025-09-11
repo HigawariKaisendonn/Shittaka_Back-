@@ -107,6 +107,19 @@
         <button type="submit" style="background: #dc3545;">問題を削除</button>
     </form>
 
+    <h2>回答投稿</h2>
+    <form id="answerForm">
+        <div class="form-group">
+            <label>問題ID:</label>
+            <input type="number" id="answerQuestionId" placeholder="例: 1" required>
+        </div>
+        <div class="form-group">
+            <label>選択肢ID:</label>
+            <input type="number" id="answerChoiceId" placeholder="例: 1" required>
+        </div>
+        <button type="submit">回答を投稿</button>
+    </form>
+
     <h2>問題一覧</h2>
     <button id="loadQuestionsBtn">問題一覧を取得</button>
     <div id="questionsList" class="result" style="display: none;"></div>
@@ -328,6 +341,7 @@
                                     <p><strong>閲覧数:</strong> ${q.views} | <strong>正解数:</strong> ${q.correct_count} | <strong>不正解数:</strong> ${q.incorrect_count}</p>
                                     <p><strong>作成日時:</strong> ${new Date(q.created_at).toLocaleString()}</p>
                                     <div style="margin-top: 10px;">
+                                        <button onclick="fillAnswerForm(${q.id})" style="background: #28a745;">回答する</button>
                                         <button onclick="fillUpdateForm(${q.id}, '${q.title.replace(/'/g, "\\'")}', '${(q.body || '').replace(/'/g, "\\'")}', '${(q.explanation || '').replace(/'/g, "\\'")}')">編集フォームに入力</button>
                                         <button onclick="fillDeleteForm(${q.id})" style="background: #dc3545; margin-left: 10px;">削除フォームに入力</button>
                                     </div>
@@ -441,6 +455,52 @@
             }
         });
 
+        // 回答投稿機能
+        document.getElementById('answerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!authToken) {
+                showResult('先にログインしてください', true);
+                return;
+            }
+            
+            const data = {
+                question_id: parseInt(document.getElementById('answerQuestionId').value),
+                choice_id: parseInt(document.getElementById('answerChoiceId').value)
+            };
+
+            try {
+                console.log('回答投稿リクエスト送信:', data);
+                const response = await fetch('http://localhost:8088/api/answers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('レスポンス受信:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
+                const result = await response.json();
+                console.log('レスポンス内容:', result);
+                
+                if (response.ok) {
+                    showResult(`回答投稿成功！<br>回答ID: ${result.id}<br>問題ID: ${result.question_id}<br>選択肢ID: ${result.choice_id}<br>回答日時: ${new Date(result.answered_at).toLocaleString()}`);
+                    document.getElementById('answerForm').reset();
+                } else {
+                    showResult(`回答投稿エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
+                }
+            } catch (error) {
+                console.error('通信エラー:', error);
+                showResult(`通信エラー: ${error.message}`, true);
+            }
+        });
+
         // フォーム入力ヘルパー関数
         function fillUpdateForm(id, title, body, explanation) {
             document.getElementById('updateQuestionId').value = id;
@@ -457,6 +517,14 @@
             
             // 削除フォームにスクロール
             document.getElementById('deleteQuestionForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function fillAnswerForm(questionId) {
+            document.getElementById('answerQuestionId').value = questionId;
+            document.getElementById('answerChoiceId').value = 1; // デフォルト値
+            
+            // 回答フォームにスクロール
+            document.getElementById('answerForm').scrollIntoView({ behavior: 'smooth' });
         }
     </script>
 </body>

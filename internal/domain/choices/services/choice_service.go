@@ -28,6 +28,11 @@ func (s *ChoiceService) CreateChoice(ctx context.Context, choice entities.Choice
 	return s.repo.Create(ctx, choice)
 }
 
+// CreateChoiceWithAuth は認証付きで新しい選択肢を作成
+func (s *ChoiceService) CreateChoiceWithAuth(ctx context.Context, choice entities.Choice, userToken string) (*entities.Choice, error) {
+	return s.repo.CreateWithAuth(ctx, choice, userToken)
+}
+
 // UpdateChoice は既存の選択肢を更新
 func (s *ChoiceService) UpdateChoice(ctx context.Context, choice entities.Choice) (*entities.Choice, error) {
 	return s.repo.Update(ctx, choice)

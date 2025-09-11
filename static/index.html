@@ -55,6 +55,24 @@
         <button type="submit">ジャンル作成</button>
     </form>
 
+    <h2>選択肢作成</h2>
+    <form id="choiceForm">
+        <div class="form-group">
+            <label>問題ID:</label>
+            <input type="number" id="questionId" placeholder="例: 1" required>
+        </div>
+        <div class="form-group">
+            <label>選択肢テキスト:</label>
+            <input type="text" id="choiceText" placeholder="例: 東京" required>
+        </div>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="isCorrect"> 正解の選択肢
+            </label>
+        </div>
+        <button type="submit">選択肢作成</button>
+    </form>
+
     <div id="result" class="result" style="display: none;"></div>
 
     <script>
@@ -180,6 +198,53 @@
                     document.getElementById('genreName').value = '';
                 } else {
                     showResult(`ジャンル作成エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
+                }
+            } catch (error) {
+                console.error('通信エラー:', error);
+                showResult(`通信エラー: ${error.message}`, true);
+            }
+        });
+
+        document.getElementById('choiceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!authToken) {
+                showResult('先にログインしてください', true);
+                return;
+            }
+            
+            const data = {
+                question_id: parseInt(document.getElementById('questionId').value),
+                text: document.getElementById('choiceText').value,
+                is_correct: document.getElementById('isCorrect').checked
+            };
+
+            try {
+                console.log('選択肢作成リクエスト送信:', data);
+                const response = await fetch('http://localhost:8088/api/choices/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('レスポンス受信:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
+                const result = await response.json();
+                console.log('レスポンス内容:', result);
+                
+                if (response.ok) {
+                    showResult(`選択肢作成成功！<br>ID: ${result.id}<br>テキスト: ${result.text}<br>正解: ${result.is_correct ? 'はい' : 'いいえ'}`);
+                    document.getElementById('choiceText').value = '';
+                    document.getElementById('isCorrect').checked = false;
+                } else {
+                    showResult(`選択肢作成エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
                 }
             } catch (error) {
                 console.error('通信エラー:', error);

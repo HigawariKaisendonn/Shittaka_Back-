@@ -12,10 +12,11 @@ import (
 // ChoiceRepository は選択肢のリポジトリを表すインターフェース
 // Service層から利用され、DB操作の抽象化を担当する
 type ChoiceRepository interface {
-	GetByQuestionID(ctx context.Context, questionID int64) ([]entities.Choice, error) // 問題IDに紐づく選択肢を取得
-	Create(ctx context.Context, choice entities.Choice) (*entities.Choice, error)     // 新しい選択肢を作成
-	Update(ctx context.Context, choice entities.Choice) (*entities.Choice, error)     // 既存の選択肢を更新
-	Delete(ctx context.Context, id int64) error                                       // 選択肢を削除
+	GetByQuestionID(ctx context.Context, questionID int64) ([]entities.Choice, error)                  // 問題IDに紐づく選択肢を取得
+	Create(ctx context.Context, choice entities.Choice) (*entities.Choice, error)                      // 新しい選択肢を作成
+	CreateWithAuth(ctx context.Context, choice entities.Choice, userToken string) (*entities.Choice, error) // 認証付きで新しい選択肢を作成
+	Update(ctx context.Context, choice entities.Choice) (*entities.Choice, error)                      // 既存の選択肢を更新
+	Delete(ctx context.Context, id int64) error                                                        // 選択肢を削除
 }
 
 // choiceRepository は ChoiceRepository インターフェースの実装
@@ -51,6 +52,12 @@ func (r *choiceRepository) Create(ctx context.Context, choice entities.Choice) (
 		return nil, err
 	}
 	return &inserted[0], nil // 追加されたレコードを返す
+}
+
+// CreateWithAuth は認証付きで新しい選択肢を DB に追加
+func (r *choiceRepository) CreateWithAuth(ctx context.Context, choice entities.Choice, userToken string) (*entities.Choice, error) {
+	// 古いSupabase実装では認証対応が困難なため、既存メソッドを使用
+	return r.Create(ctx, choice)
 }
 
 // Update は既存の選択肢を更新

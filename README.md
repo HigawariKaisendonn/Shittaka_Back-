@@ -109,14 +109,32 @@ curl -X GET "http://localhost:8088/api/auth/test"
 
 ### 認証関連
 
-- `POST /api/auth/signup` - ユーザー登録
-- `POST /api/auth/login` - ユーザーログイン
-- `POST /api/auth/logout` - ユーザーログアウト
-- `GET /api/auth/test` - Supabase接続テスト
 
-### その他
+● 現在完成しているAPIと名前は以下の通りです：
 
-- `GET /health` - ヘルスチェック
+  認証関連 (Auth Handler)
+
+  1. POST /api/auth/signup - ユーザー登録
+  2. POST /api/auth/login - ユーザーログイン
+  3. POST /api/auth/logout - ユーザーログアウト
+  4. GET /api/auth/test - Supabase接続テスト
+
+  ジャンル関連 (Genre Handler)
+
+  5. POST /api/genres - ジャンル作成
+
+  問題関連 (Question Handler)
+
+  6. POST /api/questions - 問題作成
+  7. GET /api/questions - 問題一覧取得
+  8. GET /api/questions/{id} - 特定の問題取得
+  9. PUT /api/questions/{id} - 問題更新
+  10. DELETE /api/questions/{id} - 問題削除
+  11. GET /api/my-questions - ユーザーの問題一覧取得
+
+  その他
+
+  12. GET /health - ヘルスチェック
 
 ## 使用例
 

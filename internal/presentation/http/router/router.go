@@ -10,7 +10,7 @@ import (
 )
 
 // SetupRoutes はルーティングを設定
-func SetupRoutes(authHandler *handlers.AuthHandler, genreHandler *handlers.GenreHandler, questionHandler *handlers.QuestionHandler) *http.ServeMux {
+func SetupRoutes(authHandler *handlers.AuthHandler, genreHandler *handlers.GenreHandler, questionHandler *handlers.QuestionHandler, answerHandler *handlers.AnswerHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// 認証関連のエンドポイント
@@ -46,6 +46,9 @@ func SetupRoutes(authHandler *handlers.AuthHandler, genreHandler *handlers.Genre
 		}
 	}))
 	mux.HandleFunc("/api/my-questions", middleware.CORS(questionHandler.GetMyQuestionsHandler))
+
+	// 回答関連のエンドポイント
+	mux.HandleFunc("/api/answers", middleware.CORS(answerHandler.CreateAnswerHandler))
 
 	// ヘルスチェック用エンドポイント
 	mux.HandleFunc("/health", middleware.CORS(func(w http.ResponseWriter, r *http.Request) {

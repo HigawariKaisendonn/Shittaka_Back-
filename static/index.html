@@ -55,7 +55,7 @@
         <button type="submit">ジャンル作成</button>
     </form>
 
-    <h2>問題作成</h2>
+    <h2>問題作成（選択肢付き）</h2>
     <form id="questionForm">
         <div class="form-group">
             <label>ジャンルID:</label>
@@ -73,7 +73,40 @@
             <label>解説:</label>
             <textarea id="questionExplanation" placeholder="解説を入力してください" rows="3" style="width: 300px; padding: 8px; border: 1px solid #ddd; resize: vertical;"></textarea>
         </div>
-        <button type="submit">問題作成</button>
+        
+        <h3>選択肢</h3>
+        <div id="choicesContainer">
+            <div class="choice-input" style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <div class="form-group">
+                    <label>選択肢1:</label>
+                    <input type="text" class="choice-text" placeholder="選択肢のテキスト" required>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="correctChoice" value="0" checked> 正解
+                    </label>
+                    <button type="button" class="remove-choice" onclick="removeChoice(this)" style="background: #dc3545; color: white; border: none; padding: 5px 10px; margin-left: 10px; cursor: pointer; border-radius: 3px;">削除</button>
+                </div>
+            </div>
+            <div class="choice-input" style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <div class="form-group">
+                    <label>選択肢2:</label>
+                    <input type="text" class="choice-text" placeholder="選択肢のテキスト" required>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="correctChoice" value="1"> 正解
+                    </label>
+                    <button type="button" class="remove-choice" onclick="removeChoice(this)" style="background: #dc3545; color: white; border: none; padding: 5px 10px; margin-left: 10px; cursor: pointer; border-radius: 3px;">削除</button>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top: 10px;">
+            <button type="button" onclick="addChoice()" style="background: #28a745; color: white; border: none; padding: 8px 16px; cursor: pointer; border-radius: 3px; margin-right: 10px;">選択肢を追加</button>
+            <span style="color: #666; font-size: 0.9em;">※最低2つの選択肢が必要です</span>
+        </div>
+        
+        <button type="submit">問題と選択肢を作成</button>
     </form>
 
     <h2>問題編集</h2>
@@ -129,6 +162,112 @@
     <script>
         const API_BASE = 'http://localhost:8088/api/auth';
         let authToken = null;
+        let choiceCount = 2; // 初期選択肢数
+
+        // 選択肢を追加する関数
+        function addChoice() {
+            const container = document.getElementById('choicesContainer');
+            const newIndex = choiceCount;
+            
+            const choiceDiv = document.createElement('div');
+            choiceDiv.className = 'choice-input';
+            choiceDiv.style.marginBottom = '10px';
+            choiceDiv.style.padding = '10px';
+            choiceDiv.style.border = '1px solid #ddd';
+            choiceDiv.style.borderRadius = '5px';
+            
+            choiceDiv.innerHTML = `
+                <div class="form-group">
+                    <label>選択肢${newIndex + 1}:</label>
+                    <input type="text" class="choice-text" placeholder="選択肢のテキスト" required>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="correctChoice" value="${newIndex}"> 正解
+                    </label>
+                    <button type="button" class="remove-choice" onclick="removeChoice(this)" style="background: #dc3545; color: white; border: none; padding: 5px 10px; margin-left: 10px; cursor: pointer; border-radius: 3px;">削除</button>
+                </div>
+            `;
+            
+            container.appendChild(choiceDiv);
+            choiceCount++;
+            updateChoiceLabels();
+        }
+
+        // 選択肢を削除する関数
+        function removeChoice(button) {
+            const choiceInputs = document.querySelectorAll('.choice-input');
+            
+            // 最低2つの選択肢を保持
+            if (choiceInputs.length <= 2) {
+                alert('最低2つの選択肢が必要です');
+                return;
+            }
+            
+            const choiceDiv = button.closest('.choice-input');
+            const radioInput = choiceDiv.querySelector('input[name="correctChoice"]');
+            const wasCorrect = radioInput.checked;
+            
+            choiceDiv.remove();
+            choiceCount--;
+            
+            // 削除された選択肢が正解だった場合、最初の選択肢を正解にする
+            if (wasCorrect) {
+                const firstRadio = document.querySelector('input[name="correctChoice"]');
+                if (firstRadio) {
+                    firstRadio.checked = true;
+                }
+            }
+            
+            updateChoiceLabels();
+        }
+
+        // 選択肢のラベルとvalue属性を更新する関数
+        function updateChoiceLabels() {
+            const choiceInputs = document.querySelectorAll('.choice-input');
+            choiceInputs.forEach((choiceDiv, index) => {
+                const label = choiceDiv.querySelector('label');
+                const radioInput = choiceDiv.querySelector('input[name="correctChoice"]');
+                
+                label.textContent = `選択肢${index + 1}:`;
+                radioInput.value = index.toString();
+            });
+        }
+
+        // 問題作成フォームをリセットする関数
+        function resetQuestionForm() {
+            document.getElementById('questionForm').reset();
+            
+            // 選択肢を初期状態（2つ）に戻す
+            const container = document.getElementById('choicesContainer');
+            container.innerHTML = `
+                <div class="choice-input" style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                    <div class="form-group">
+                        <label>選択肢1:</label>
+                        <input type="text" class="choice-text" placeholder="選択肢のテキスト" required>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="radio" name="correctChoice" value="0" checked> 正解
+                        </label>
+                        <button type="button" class="remove-choice" onclick="removeChoice(this)" style="background: #dc3545; color: white; border: none; padding: 5px 10px; margin-left: 10px; cursor: pointer; border-radius: 3px;">削除</button>
+                    </div>
+                </div>
+                <div class="choice-input" style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                    <div class="form-group">
+                        <label>選択肢2:</label>
+                        <input type="text" class="choice-text" placeholder="選択肢のテキスト" required>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="radio" name="correctChoice" value="1"> 正解
+                        </label>
+                        <button type="button" class="remove-choice" onclick="removeChoice(this)" style="background: #dc3545; color: white; border: none; padding: 5px 10px; margin-left: 10px; cursor: pointer; border-radius: 3px;">削除</button>
+                    </div>
+                </div>
+            `;
+            choiceCount = 2;
+        }
 
         function showResult(message, isError = false) {
             const resultDiv = document.getElementById('result');
@@ -292,8 +431,9 @@
                 console.log('レスポンス内容:', result);
                 
                 if (response.ok) {
-                    showResult(`問題作成成功！<br>ID: ${result.id}<br>タイトル: ${result.title}<br>作成日時: ${new Date(result.created_at).toLocaleString()}`);
-                    document.getElementById('questionForm').reset();
+                    // 問題作成成功後、選択肢を作成
+                    const questionId = result.id;
+                    await createChoicesForQuestion(questionId);
                 } else {
                     showResult(`問題作成エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
                 }
@@ -302,6 +442,59 @@
                 showResult(`通信エラー: ${error.message}`, true);
             }
         });
+
+        // 問題作成後に選択肢を自動作成する関数
+        async function createChoicesForQuestion(questionId) {
+            const choiceInputs = document.querySelectorAll('.choice-input');
+            const correctChoiceIndex = parseInt(document.querySelector('input[name="correctChoice"]:checked').value);
+            let createdChoicesCount = 0;
+            let errors = [];
+
+            for (let i = 0; i < choiceInputs.length; i++) {
+                const choiceText = choiceInputs[i].querySelector('.choice-text').value.trim();
+                
+                if (choiceText) {
+                    const choiceData = {
+                        question_id: questionId,
+                        text: choiceText,
+                        is_correct: i === correctChoiceIndex
+                    };
+
+                    try {
+                        console.log(`選択肢${i+1}作成リクエスト送信:`, choiceData);
+                        const choiceResponse = await fetch('http://localhost:8088/api/choices/create', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${authToken}`
+                            },
+                            body: JSON.stringify(choiceData)
+                        });
+
+                        if (choiceResponse.ok) {
+                            const choiceResult = await choiceResponse.json();
+                            console.log(`選択肢${i+1}作成成功:`, choiceResult);
+                            createdChoicesCount++;
+                        } else {
+                            const errorResult = await choiceResponse.json();
+                            errors.push(`選択肢${i+1}: ${errorResult.message || errorResult.error}`);
+                        }
+                    } catch (error) {
+                        errors.push(`選択肢${i+1}: 通信エラー (${error.message})`);
+                    }
+                }
+            }
+
+            // 結果表示
+            if (errors.length === 0 && createdChoicesCount > 0) {
+                showResult(`問題と選択肢の作成が完了しました！<br>問題ID: ${questionId}<br>作成された選択肢数: ${createdChoicesCount}`);
+                resetQuestionForm();
+            } else if (createdChoicesCount > 0) {
+                showResult(`問題作成成功！<br>問題ID: ${questionId}<br>作成された選択肢数: ${createdChoicesCount}<br>エラー: ${errors.join(', ')}`, true);
+            } else {
+                showResult(`問題は作成されましたが、選択肢の作成に失敗しました。<br>問題ID: ${questionId}<br>エラー: ${errors.join(', ')}`, true);
+            }
+        }
 
         document.getElementById('loadQuestionsBtn').addEventListener('click', async () => {
             try {
@@ -455,7 +648,7 @@
             }
         });
 
-        // 回答投稿機能
+        // 回答投稿機能 //問題と選択肢を紐づけて回答
         document.getElementById('answerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             

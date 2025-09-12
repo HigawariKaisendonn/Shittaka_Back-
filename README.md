@@ -132,9 +132,22 @@ curl -X GET "http://localhost:8088/api/auth/test"
   10. DELETE /api/questions/{id} - 問題削除
   11. GET /api/my-questions - ユーザーの問題一覧取得
 
-  その他
+      回答関連（Answer Handler）
 
-  12. GET /health - ヘルスチェック
+  13. POST /api/answers - 回答作成
+
+      選択肢関連（Choices Handler）
+
+  15. GET /api/choices/{questionID} - 選択肢取得
+  16. POST /api/choices/create - 選択肢作成
+  17. PUT /api/choices/update - 選択肢更新
+  18. DELETE /api/choices/delete/{id} - 選択肢削除
+
+      その他
+
+  19. POST /api/answers - 回答作成
+  20. / - 静的ファイル配信
+
 
 ## 使用例
 

@@ -55,23 +55,74 @@
         <button type="submit">ジャンル作成</button>
     </form>
 
-    <h2>選択肢作成</h2>
-    <form id="choiceForm">
+    <h2>問題作成</h2>
+    <form id="questionForm">
+        <div class="form-group">
+            <label>ジャンルID:</label>
+            <input type="number" id="questionGenreId" placeholder="例: 1" required>
+        </div>
+        <div class="form-group">
+            <label>問題タイトル:</label>
+            <input type="text" id="questionTitle" placeholder="例: JavaScriptの基本文法" required>
+        </div>
+        <div class="form-group">
+            <label>問題文:</label>
+            <textarea id="questionBody" placeholder="問題の詳細を入力してください" rows="4" style="width: 300px; padding: 8px; border: 1px solid #ddd; resize: vertical;"></textarea>
+        </div>
+        <div class="form-group">
+            <label>解説:</label>
+            <textarea id="questionExplanation" placeholder="解説を入力してください" rows="3" style="width: 300px; padding: 8px; border: 1px solid #ddd; resize: vertical;"></textarea>
+        </div>
+        <button type="submit">問題作成</button>
+    </form>
+
+    <h2>問題編集</h2>
+    <p style="color: #666; font-size: 0.9em;">※ 空のフィールドは変更されません。変更したいフィールドのみ入力してください。</p>
+    <form id="updateQuestionForm">
         <div class="form-group">
             <label>問題ID:</label>
-            <input type="number" id="questionId" placeholder="例: 1" required>
+            <input type="number" id="updateQuestionId" placeholder="例: 1" required>
         </div>
         <div class="form-group">
-            <label>選択肢テキスト:</label>
-            <input type="text" id="choiceText" placeholder="例: 東京" required>
+            <label>問題タイトル:</label>
+            <input type="text" id="updateQuestionTitle" placeholder="新しいタイトル（空の場合は変更されません）">
         </div>
         <div class="form-group">
-            <label>
-                <input type="checkbox" id="isCorrect"> 正解の選択肢
-            </label>
+            <label>問題文:</label>
+            <textarea id="updateQuestionBody" placeholder="新しい問題文（空の場合は変更されません）" rows="4" style="width: 300px; padding: 8px; border: 1px solid #ddd; resize: vertical;"></textarea>
         </div>
-        <button type="submit">選択肢作成</button>
+        <div class="form-group">
+            <label>解説:</label>
+            <textarea id="updateQuestionExplanation" placeholder="新しい解説（空の場合は変更されません）" rows="3" style="width: 300px; padding: 8px; border: 1px solid #ddd; resize: vertical;"></textarea>
+        </div>
+        <button type="submit">問題を更新</button>
     </form>
+
+    <h2>問題削除</h2>
+    <form id="deleteQuestionForm">
+        <div class="form-group">
+            <label>問題ID:</label>
+            <input type="number" id="deleteQuestionId" placeholder="例: 1" required>
+        </div>
+        <button type="submit" style="background: #dc3545;">問題を削除</button>
+    </form>
+
+    <h2>回答投稿</h2>
+    <form id="answerForm">
+        <div class="form-group">
+            <label>問題ID:</label>
+            <input type="number" id="answerQuestionId" placeholder="例: 1" required>
+        </div>
+        <div class="form-group">
+            <label>選択肢ID:</label>
+            <input type="number" id="answerChoiceId" placeholder="例: 1" required>
+        </div>
+        <button type="submit">回答を投稿</button>
+    </form>
+
+    <h2>問題一覧</h2>
+    <button id="loadQuestionsBtn">問題一覧を取得</button>
+    <div id="questionsList" class="result" style="display: none;"></div>
 
     <div id="result" class="result" style="display: none;"></div>
 
@@ -205,7 +256,7 @@
             }
         });
 
-        document.getElementById('choiceForm').addEventListener('submit', async (e) => {
+        document.getElementById('questionForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             if (!authToken) {
@@ -214,14 +265,15 @@
             }
             
             const data = {
-                question_id: parseInt(document.getElementById('questionId').value),
-                text: document.getElementById('choiceText').value,
-                is_correct: document.getElementById('isCorrect').checked
+                genre_id: parseInt(document.getElementById('questionGenreId').value),
+                title: document.getElementById('questionTitle').value,
+                body: document.getElementById('questionBody').value,
+                explanation: document.getElementById('questionExplanation').value
             };
 
             try {
-                console.log('選択肢作成リクエスト送信:', data);
-                const response = await fetch('http://localhost:8088/api/choices/create', {
+                console.log('問題作成リクエスト送信:', data);
+                const response = await fetch('http://localhost:8088/api/questions', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -240,17 +292,240 @@
                 console.log('レスポンス内容:', result);
                 
                 if (response.ok) {
-                    showResult(`選択肢作成成功！<br>ID: ${result.id}<br>テキスト: ${result.text}<br>正解: ${result.is_correct ? 'はい' : 'いいえ'}`);
-                    document.getElementById('choiceText').value = '';
-                    document.getElementById('isCorrect').checked = false;
+                    showResult(`問題作成成功！<br>ID: ${result.id}<br>タイトル: ${result.title}<br>作成日時: ${new Date(result.created_at).toLocaleString()}`);
+                    document.getElementById('questionForm').reset();
                 } else {
-                    showResult(`選択肢作成エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
+                    showResult(`問題作成エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
                 }
             } catch (error) {
                 console.error('通信エラー:', error);
                 showResult(`通信エラー: ${error.message}`, true);
             }
         });
+
+        document.getElementById('loadQuestionsBtn').addEventListener('click', async () => {
+            try {
+                console.log('問題一覧取得リクエスト送信');
+                const response = await fetch('http://localhost:8088/api/questions', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('レスポンス受信:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
+                const result = await response.json();
+                console.log('レスポンス内容:', result);
+                
+                if (response.ok) {
+                    const questionsDiv = document.getElementById('questionsList');
+                    questionsDiv.style.display = 'block';
+                    questionsDiv.style.backgroundColor = '#d4edda';
+                    questionsDiv.style.color = '#155724';
+                    
+                    if (Array.isArray(result) && result.length > 0) {
+                        let questionsHtml = '<h3>問題一覧:</h3>';
+                        result.forEach(q => {
+                            questionsHtml += `
+                                <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                                    <h4>${q.title} (ID: ${q.id})</h4>
+                                    <p><strong>ジャンルID:</strong> ${q.genre_id}</p>
+                                    <p><strong>投稿者:</strong> ${q.user_id}</p>
+                                    <p><strong>問題文:</strong> ${q.body || '未設定'}</p>
+                                    <p><strong>解説:</strong> ${q.explanation || '未設定'}</p>
+                                    <p><strong>閲覧数:</strong> ${q.views} | <strong>正解数:</strong> ${q.correct_count} | <strong>不正解数:</strong> ${q.incorrect_count}</p>
+                                    <p><strong>作成日時:</strong> ${new Date(q.created_at).toLocaleString()}</p>
+                                    <div style="margin-top: 10px;">
+                                        <button onclick="fillAnswerForm(${q.id})" style="background: #28a745;">回答する</button>
+                                        <button onclick="fillUpdateForm(${q.id}, '${q.title.replace(/'/g, "\\'")}', '${(q.body || '').replace(/'/g, "\\'")}', '${(q.explanation || '').replace(/'/g, "\\'")}')">編集フォームに入力</button>
+                                        <button onclick="fillDeleteForm(${q.id})" style="background: #dc3545; margin-left: 10px;">削除フォームに入力</button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        questionsDiv.innerHTML = questionsHtml;
+                    } else {
+                        questionsDiv.innerHTML = '<h3>問題が見つかりません</h3>';
+                    }
+                } else {
+                    showResult(`問題一覧取得エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
+                }
+            } catch (error) {
+                console.error('通信エラー:', error);
+                showResult(`通信エラー: ${error.message}`, true);
+            }
+        });
+
+        // 問題編集機能
+        document.getElementById('updateQuestionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!authToken) {
+                showResult('先にログインしてください', true);
+                return;
+            }
+            
+            const questionId = document.getElementById('updateQuestionId').value;
+            const data = {
+                title: document.getElementById('updateQuestionTitle').value,
+                body: document.getElementById('updateQuestionBody').value,
+                explanation: document.getElementById('updateQuestionExplanation').value
+            };
+
+            try {
+                console.log('問題更新リクエスト送信:', data);
+                const response = await fetch(`http://localhost:8088/api/questions/${questionId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('レスポンス受信:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
+                const result = await response.json();
+                console.log('レスポンス内容:', result);
+                
+                if (response.ok) {
+                    showResult(`問題更新成功！<br>問題ID: ${questionId}<br>メッセージ: ${result.message || '更新されました'}`);
+                    document.getElementById('updateQuestionForm').reset();
+                } else {
+                    showResult(`問題更新エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
+                }
+            } catch (error) {
+                console.error('通信エラー:', error);
+                showResult(`通信エラー: ${error.message}`, true);
+            }
+        });
+
+        // 問題削除機能
+        document.getElementById('deleteQuestionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!authToken) {
+                showResult('先にログインしてください', true);
+                return;
+            }
+            
+            const questionId = document.getElementById('deleteQuestionId').value;
+            
+            if (!confirm(`問題ID ${questionId} を本当に削除しますか？この操作は取り消せません。`)) {
+                return;
+            }
+
+            try {
+                console.log('問題削除リクエスト送信:', { questionId });
+                const response = await fetch(`http://localhost:8088/api/questions/${questionId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                console.log('レスポンス受信:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
+                const result = await response.json();
+                console.log('レスポンス内容:', result);
+                
+                if (response.ok) {
+                    showResult(`問題削除成功！<br>問題ID: ${questionId}<br>メッセージ: ${result.message || '削除されました'}`);
+                    document.getElementById('deleteQuestionForm').reset();
+                } else {
+                    showResult(`問題削除エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
+                }
+            } catch (error) {
+                console.error('通信エラー:', error);
+                showResult(`通信エラー: ${error.message}`, true);
+            }
+        });
+
+        // 回答投稿機能
+        document.getElementById('answerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!authToken) {
+                showResult('先にログインしてください', true);
+                return;
+            }
+            
+            const data = {
+                question_id: parseInt(document.getElementById('answerQuestionId').value),
+                choice_id: parseInt(document.getElementById('answerChoiceId').value)
+            };
+
+            try {
+                console.log('回答投稿リクエスト送信:', data);
+                const response = await fetch('http://localhost:8088/api/answers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('レスポンス受信:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
+                const result = await response.json();
+                console.log('レスポンス内容:', result);
+                
+                if (response.ok) {
+                    showResult(`回答投稿成功！<br>回答ID: ${result.id}<br>問題ID: ${result.question_id}<br>選択肢ID: ${result.choice_id}<br>回答日時: ${new Date(result.answered_at).toLocaleString()}`);
+                    document.getElementById('answerForm').reset();
+                } else {
+                    showResult(`回答投稿エラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
+                }
+            } catch (error) {
+                console.error('通信エラー:', error);
+                showResult(`通信エラー: ${error.message}`, true);
+            }
+        });
+
+        // フォーム入力ヘルパー関数
+        function fillUpdateForm(id, title, body, explanation) {
+            document.getElementById('updateQuestionId').value = id;
+            document.getElementById('updateQuestionTitle').value = title;
+            document.getElementById('updateQuestionBody').value = body;
+            document.getElementById('updateQuestionExplanation').value = explanation;
+            
+            // 編集フォームにスクロール
+            document.getElementById('updateQuestionForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function fillDeleteForm(id) {
+            document.getElementById('deleteQuestionId').value = id;
+            
+            // 削除フォームにスクロール
+            document.getElementById('deleteQuestionForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function fillAnswerForm(questionId) {
+            document.getElementById('answerQuestionId').value = questionId;
+            document.getElementById('answerChoiceId').value = 1; // デフォルト値
+            
+            // 回答フォームにスクロール
+            document.getElementById('answerForm').scrollIntoView({ behavior: 'smooth' });
+        }
     </script>
 </body>
 </html>

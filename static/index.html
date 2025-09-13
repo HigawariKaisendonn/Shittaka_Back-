@@ -58,8 +58,11 @@
     <h2>問題作成（選択肢付き）</h2>
     <form id="questionForm">
         <div class="form-group">
-            <label>ジャンルID:</label>
-            <input type="number" id="questionGenreId" placeholder="例: 1" required>
+            <label>ジャンル:</label>
+            <select id="questionGenreId" required style="width: 316px; padding: 8px; border: 1px solid #ddd;">
+                <option value="">ジャンルを選択してください</option>
+            </select>
+            <button type="button" onclick="loadGenres()" style="margin-left: 10px; padding: 8px 16px; background: #6c757d; color: white; border: none; cursor: pointer; border-radius: 3px;">ジャンル更新</button>
         </div>
         <div class="form-group">
             <label>問題タイトル:</label>
@@ -163,6 +166,59 @@
         const API_BASE = 'http://localhost:8088/api/auth';
         let authToken = null;
         let choiceCount = 2; // 初期選択肢数
+
+        // ページ読み込み時にジャンルを取得
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGenres();
+        });
+
+        // ジャンル一覧を取得してドロップダウンに設定
+        async function loadGenres() {
+            try {
+                console.log('ジャンル一覧取得リクエスト送信');
+                const response = await fetch('http://localhost:8088/api/genres', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('レスポンス受信:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
+                const result = await response.json();
+                console.log('レスポンス内容:', result);
+
+                if (response.ok) {
+                    const genreSelect = document.getElementById('questionGenreId');
+
+                    // 既存のオプションをクリア（最初のオプションは残す）
+                    genreSelect.innerHTML = '<option value="">ジャンルを選択してください</option>';
+
+                    // ジャンルオプションを追加
+                    if (Array.isArray(result) && result.length > 0) {
+                        result.forEach(genre => {
+                            const option = document.createElement('option');
+                            option.value = genre.id;
+                            option.textContent = genre.name;
+                            genreSelect.appendChild(option);
+                        });
+                        console.log(`${result.length}個のジャンルを読み込みました`);
+                    } else {
+                        console.log('ジャンルが見つかりません');
+                    }
+                } else {
+                    console.error(`ジャンル取得エラー (${response.status}): ${result.message || result.error}`);
+                    showResult(`ジャンル取得エラー (${response.status}): ${result.message || result.error}`, true);
+                }
+            } catch (error) {
+                console.error('ジャンル取得通信エラー:', error);
+                showResult(`ジャンル取得通信エラー: ${error.message}`, true);
+            }
+        }
 
         // 選択肢を追加する関数
         function addChoice() {

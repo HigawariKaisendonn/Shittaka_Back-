@@ -56,6 +56,24 @@ func (u *GenreUsecase) CreateGenre(ctx context.Context, req dto.CreateGenreReque
 	}, nil
 }
 
+// GetAllGenres は全てのジャンルを取得する
+func (u *GenreUsecase) GetAllGenres(ctx context.Context) ([]*dto.GenreResponse, error) {
+	genres, err := u.genreRepo.FindAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	responses := make([]*dto.GenreResponse, len(genres))
+	for i, genre := range genres {
+		responses[i] = &dto.GenreResponse{
+			ID:   genre.ID,
+			Name: genre.Name,
+		}
+	}
+
+	return responses, nil
+}
+
 // validateCreateGenreRequest はジャンル作成リクエストをバリデーション
 func (u *GenreUsecase) validateCreateGenreRequest(req dto.CreateGenreRequest) error {
 	if strings.TrimSpace(req.Name) == "" {

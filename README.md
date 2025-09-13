@@ -134,7 +134,7 @@ curl -X GET "http://localhost:8088/api/auth/test"
 
       回答関連（Answer Handler）
 
-  13. POST /api/answers - 回答作成
+  13. POST /api/answers - 問題に対する自分の回答
 
       選択肢関連（Choices Handler）
 

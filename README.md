@@ -145,7 +145,7 @@ curl -X GET "http://localhost:8088/api/auth/test"
 
       その他
 
-  19. POST /api/answers - 回答作成
+  19. POST /api/answers - 自身の回答
   20. / - 静的ファイル配信
 
 

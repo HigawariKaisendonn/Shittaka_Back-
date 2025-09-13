@@ -9,6 +9,7 @@ Go言語で構築されたSupabase認証システムのバックエンドAPIで�
 - ユーザーログアウト
 - Supabaseとの疎通テスト
 - CORS対応
+- ジャンル全取得
 - ジャンル作成
 - 問題作成
 - 問題編集
@@ -121,16 +122,17 @@ curl -X GET "http://localhost:8088/api/auth/test"
 
   ジャンル関連 (Genre Handler)
 
-  5. POST /api/genres - ジャンル作成
+  5. GET /api/genres - ジャンル全取得
+  6. POST /api/genres - ジャンル作成
 
   問題関連 (Question Handler)
 
-  6. POST /api/questions - 問題作成
-  7. GET /api/questions - 問題一覧取得
-  8. GET /api/questions/{id} - 特定の問題取得
-  9. PUT /api/questions/{id} - 問題更新
-  10. DELETE /api/questions/{id} - 問題削除
-  11. GET /api/my-questions - ユーザーの問題一覧取得
+  7. POST /api/questions - 問題作成
+  8. GET /api/questions - 問題一覧取得
+  9. GET /api/questions/{id} - 特定の問題取得
+  10. PUT /api/questions/{id} - 問題更新
+  11. DELETE /api/questions/{id} - 問題削除
+  12. GET /api/my-questions - ユーザーの問題一覧取得
 
       回答関連（Answer Handler）
 

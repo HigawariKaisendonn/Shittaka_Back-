@@ -20,7 +20,16 @@ func SetupRoutes(authHandler *handlers.AuthHandler, genreHandler *handlers.Genre
 	mux.HandleFunc("/api/auth/test", middleware.CORS(authHandler.TestConnectionHandler))
 
 	// ジャンル関連のエンドポイント
-	mux.HandleFunc("/api/genres", middleware.CORS(genreHandler.CreateGenreHandler))
+	mux.HandleFunc("/api/genres", middleware.CORS(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			genreHandler.CreateGenreHandler(w, r)
+		case http.MethodGet:
+			genreHandler.GetAllGenresHandler(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
 
 	// 問題関連のエンドポイント
 	mux.HandleFunc("/api/questions", middleware.CORS(func(w http.ResponseWriter, r *http.Request) {

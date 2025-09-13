@@ -71,6 +71,22 @@ func (h *GenreHandler) CreateGenreHandler(w http.ResponseWriter, r *http.Request
 	h.sendJSON(w, response, http.StatusCreated)
 }
 
+// GetAllGenresHandler は全ジャンルの取得を処理
+func (h *GenreHandler) GetAllGenresHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		h.sendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	genres, err := h.genreUsecase.GetAllGenres(r.Context())
+	if err != nil {
+		h.handleUsecaseError(w, err)
+		return
+	}
+
+	h.sendJSON(w, genres, http.StatusOK)
+}
+
 // ヘルパー関数
 
 // handleUsecaseError はユースケースエラーを適切なHTTPエラーに変換
